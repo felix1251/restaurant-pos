@@ -97,7 +97,9 @@ async function createWindow() {
 
     win.once("ready-to-show", () => {
         if (isLogin) {
+            win.center();
             win.show();
+            win.focus();
         }
     });
     // win.webContents.on('will-navigate', (event, url) => { }) #344
