@@ -35,18 +35,18 @@ if (!app.requestSingleInstanceLock()) {
 // Read more on https://www.electronjs.org/docs/latest/tutorial/security
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
-let win: BrowserWindow | null = null;
-let isLogin: boolean = false;
+let mainWindow: BrowserWindow | null = null;
+let loginWindow: BrowserWindow | null = null;
+// let isLogin: boolean = false;
 // Here, you can also use other preload
 const preload = join(__dirname, "../preload/index.js");
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, "index.html");
 
 async function createWindow() {
-    win = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         title: "Main window",
         icon: join(process.env.PUBLIC, "favicon.ico"),
-        show: false,
         width: 1350,
         height: 850,
         minWidth: 1000,
@@ -64,23 +64,23 @@ async function createWindow() {
 
     if (process.env.VITE_DEV_SERVER_URL) {
         // electron-vite-vue#298
-        win.loadURL(url);
+        mainWindow.loadURL(url);
         // Open devTool if the app is not packaged
-        win.webContents.openDevTools();
+        mainWindow.webContents.openDevTools();
     } else {
-        win.loadFile(indexHtml);
+        mainWindow.loadFile(indexHtml);
     }
 
     // Test actively push message to the Electron-Renderer
-    win.webContents.on("did-finish-load", () => {
-        win?.webContents.send(
+    mainWindow.webContents.on("did-finish-load", () => {
+        mainWindow?.webContents.send(
             "main-process-message",
             new Date().toLocaleString()
         );
     });
 
     // Make all links open with the browser, not with the application
-    win.webContents.setWindowOpenHandler(({ url }) => {
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith("https:")) shell.openExternal(url);
         return { action: "deny" };
     });
@@ -94,29 +94,21 @@ async function createWindow() {
     //     });
     //     if (response == 1) e.preventDefault();
     // });
-
-    win.once("ready-to-show", () => {
-        if (isLogin) {
-            win.center();
-            win.show();
-            win.focus();
-        }
-    });
     // win.webContents.on('will-navigate', (event, url) => { }) #344
 }
 
 app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
-    win = null;
+    mainWindow = null;
     if (process.platform !== "darwin") app.quit();
 });
 
 app.on("second-instance", () => {
-    if (win) {
+    if (mainWindow) {
         // Focus on the main window if the user tried to open another
-        if (win.isMinimized()) win.restore();
-        win.focus();
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
     }
 });
 
@@ -138,7 +130,6 @@ ipcMain.handle("open-win", (_, arg) => {
             contextIsolation: false,
         },
     });
-
     if (process.env.VITE_DEV_SERVER_URL) {
         childWindow.loadURL(`${url}#${arg}`);
     } else {
@@ -146,6 +137,6 @@ ipcMain.handle("open-win", (_, arg) => {
     }
 });
 
-ipcMain.on("isLogin", (_, type, value) => {
-    if (type === "initial") isLogin = value;
-});
+// ipcMain.on("isLogin", (_, type, value) => {
+//     if (type === "initial") isLogin = value;
+// });
